@@ -1,22 +1,32 @@
+from pickle import FALSE 
 import cv2 as cv                                    #to capture slide and webcam
 import os                                           #to add the folder with current program
 from cvzone.HandTrackingModule import HandDetector  #to detect hands movement and gestures
-import numpy as np                                  #to calculate co-ordinates
+import numpy as np
+from pyparsing import annotations #to calculate co-ordinates
 import speech_recognition as sr                     #to implement voice controls
+
 
 # Variables 
  
 width, height = 1000, 600
 folderPath = r"C:\Users\hp\Desktop\New folder"
 
+
+# camera setup
+
 cap = cv.VideoCapture(0)
+
 cap.set(3, width)
 cap.set(4, height)
 
+# get the list of presentation images
+
 path_images = sorted(os.listdir(folderPath), key=len)
+
+#variables
 imgNumber = 0
 hs, ws = int(120 * 1.8), int(213 * 1.8)
-
 gestureThreshold = 350
 buttonpressed = False
 buttoncounter = 0
@@ -41,7 +51,7 @@ detector = HandDetector(detectionCon=0.85, maxHands=2)
 def get_voice_command():
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        print("Listening for voice command...")
+        print("Listening you ...")
         r.adjust_for_ambient_noise(source, duration=1)
         audio = r.listen(source)
         try:
@@ -202,50 +212,42 @@ while True:
         break
 
     # acessing voice controls with by pressing 'v'    
-    if key == ord('v'):
+     if key == ord('v'):
         command = get_voice_command()
-
-        if "next slide" in command and imgNumber < len(path_images) - 1:
-            imgNumber += 1
-            print("Next Slide")
-
-        elif "previous slide" in command and imgNumber > 0:
-            imgNumber -= 1
-            print("Previous Slide")
-
+        if "next" in command or "next slide" in command or "move to the next slide" in command or "next page" in command :
+            if imgNumber < len(path_images) - 1:
+                imgNumber += 1
+                print("Next Slide")
+                annotations = [[]]
+                annotationNumber = -1
+                annotationStart = False
+        elif "previous" in command or "move to the last slide" in command or "last slide" in command or "back" in command or "previous slide" in command or "previous page" in command:
+            if imgNumber > 0:
+                imgNumber -= 1
+                print("Previous Slide")
+                annotations = [[]]
+                annotationNumber = -1
+                annotationStart = False
         elif "zoom in" in command:
             zoomScale = min(zoomScale + 0.1, 2.0)
             print("Zoom In")
-
         elif "zoom out" in command:
             zoomScale = max(zoomScale - 0.1, 0.5)
             print("Zoom Out")
-
-        elif "exit" in command or "quit" in command:
-            print("Exiting by voice command.")
-            break
-
-        elif "start drawing" in command:
-            voiceAnnotation = True
-            annotationNumber += 1
-            annotations.append([])
-            print("Started drawing by voice.")
-
-        elif "stop" in command:
-            voiceAnnotation = False
-            print("Stopped drawing by voice.")
-
-        elif "back" in command:
-            if annotationNumber >= 0 and annotations[annotationNumber]:
-                annotations[annotationNumber].pop(-1)
-                print("Removed last point.")
-
-        elif "erase" in command:
+        elif "undo" in command:
+            if annotations and annotationNumber >= 0:
+                annotations.pop(annotationNumber)
+                annotationNumber -= 1
+                print("Undo last stroke")
+       elif "erase" in command or "clear" in command or "clear screen" in command or "remove" in command:
             annotations = [[]]
             annotationNumber = -1
             annotationStart = False
-            print("All drawings erased.")
+            print("Erase all drawing")
+        elif "exit" in command or "done for today" in command or "close" in command or "thank you" in command or "bye bye" in command:
+            print("Exiting by voice command.")
+            break
 
 #Release the camera and close all windows   
 cap.release()
-cap.destroyAllWindows()
+cv.destroyAllWindows()
